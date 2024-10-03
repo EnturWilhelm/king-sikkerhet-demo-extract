@@ -108,5 +108,5 @@ const insert = () => {
     }
 };
 
-// extract();
+extract();
 insert();
