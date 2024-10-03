@@ -12,7 +12,7 @@ const isDockerBuild = () => {
 }
 
 const isGithubRunner = () => {
-    return process.env.RUNNER_ENVIRONMENT === 'GITHUB_ENV';
+    return process.env.GITHUB_ENV !== undefined;
 };
 
 const getFiles = (suffixes) => {
